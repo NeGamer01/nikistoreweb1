@@ -8,7 +8,7 @@ type FonnteResponse = {
 };
 
 export async function sendFonnteMessage(target: string, message: string) {
-  const token = process.env.FONNTE_TOKEN;
+  const token = process.env.FONNTE_TOKEN || process.env.FONNTE_DEVICE_TOKEN;
   if (!token) return { skipped: true, reason: "FONNTE_TOKEN kosong." };
 
   const normalizedTarget = normalizeWhatsAppTargets(target);

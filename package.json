@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "product:add": "node scripts/add-product.mjs",
+    "vercel:env": "node scripts/sync-vercel-env.mjs production",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

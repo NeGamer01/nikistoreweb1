@@ -17,10 +17,12 @@ OKEPAY_BASE_URL=https://apipay.nikistore.biz.id/api.php
 OKEPAY_API_KEY=apikey_okepay
 ORDER_SIGNING_SECRET=random_panjang
 SITE_URL=https://domain-vercel-kamu.vercel.app
-FONNTE_TOKEN=token_fonnte
+FONNTE_TOKEN=token_dari_menu_device_fonnte
 OWNER_WHATSAPP_NUMBER=628xxxxxxxxxx
 DOWNLOAD_STARTER_STORE_URL=https://link-download/source.zip
 ```
+
+`FONNTE_TOKEN` adalah token yang dicopy dari menu Device di Fonnte. Token itu menentukan device pengirim. `OWNER_WHATSAPP_NUMBER` adalah nomor tujuan notifikasi owner, boleh berbeda dari nomor device pengirim.
 
 ## Alur
 
@@ -43,5 +45,15 @@ Data katalog ada di `data/products.json`. Link download asli disimpan di env ses
 
 ## Deploy Vercel
 
-Push repo ke GitHub, import ke Vercel, lalu set semua environment variable di Project Settings.
-"# nikistoreweb" 
+Push repo ke GitHub, import ke Vercel, lalu sync env dari `.env.local`:
+
+```bash
+npm run vercel:env
+```
+
+Pastikan sudah login dan project sudah ter-link:
+
+```bash
+npx vercel login
+npx vercel link
+```
