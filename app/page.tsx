@@ -1,19 +1,12 @@
-import { ShoppingBag } from "lucide-react";
-import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { Topbar } from "@/components/Topbar";
+import { getPublicProducts } from "@/lib/products";
 
-export default function Home() {
+export default async function Home() {
+  const products = await getPublicProducts();
   return (
     <main>
-      <header className="topbar">
-        <Link href="/" className="brand" aria-label="NikiStore">
-          <span className="brand-mark">
-            <ShoppingBag size={19} />
-          </span>
-          <span>NikiStore</span>
-        </Link>
-      </header>
+      <Topbar />
 
       <section className="catalog-section" id="produk">
         <div className="section-heading">

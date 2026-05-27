@@ -1,9 +1,18 @@
 import { createHmac, randomInt, randomUUID, timingSafeEqual } from "crypto";
+import type { PanelSelection } from "./panelPricing";
 import { getProductPrice, type Product } from "./products";
 
-export type OrderPayload = {
+export type PanelOrderInfo = {
+  username: string;
+  selection: PanelSelection;
+  serverName: string;
+  serverId: string;
+};
+
+type SourceOrderPayload = {
   v: 1;
   id: string;
+  kind: "source";
   productId: string;
   productSlug: string;
   customerName: string;
@@ -16,6 +25,27 @@ export type OrderPayload = {
   paymentExpiresAt: number;
   downloadExpiresAt: number;
 };
+
+type PanelOrderPayload = {
+  v: 1;
+  id: string;
+  kind: "panel";
+  productId: "panel-custom";
+  productSlug: "panel-custom";
+  productTitle: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  basePrice: number;
+  uniqueCode: number;
+  amount: number;
+  createdAt: number;
+  paymentExpiresAt: number;
+  downloadExpiresAt: number;
+  panel: PanelOrderInfo;
+};
+
+export type OrderPayload = SourceOrderPayload | PanelOrderPayload;
 
 const PAYMENT_TTL_MS = 30 * 60 * 1000;
 const DOWNLOAD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -39,13 +69,39 @@ function safeEqual(left: string, right: string) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function createOrderToken(product: Product, customer: { name: string; email: string; phone: string }) {
+function genId() {
+  return `ORD-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function freshUniqueCode() {
+  return randomInt(21, 497);
+}
+
+function encode(payload: OrderPayload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  return { payload, token: `${body}.${signBody(body)}` };
+}
+
+async function saveOrderAsync(payload: OrderPayload) {
+  try {
+    const { saveOrder } = await import("./orderStore");
+    await saveOrder(payload);
+  } catch (error) {
+    console.error("Failed to save order to MongoDB:", error);
+  }
+}
+
+export function createOrderToken(
+  product: Product,
+  customer: { name: string; email: string; phone: string }
+) {
   const createdAt = Date.now();
-  const uniqueCode = randomInt(21, 497);
+  const uniqueCode = freshUniqueCode();
   const price = getProductPrice(product);
-  const payload: OrderPayload = {
+  const payload: SourceOrderPayload = {
     v: 1,
-    id: `ORD-${randomUUID().slice(0, 8).toUpperCase()}`,
+    id: genId(),
+    kind: "source",
     productId: product.id,
     productSlug: product.slug,
     customerName: customer.name.trim().slice(0, 80),
@@ -58,8 +114,39 @@ export function createOrderToken(product: Product, customer: { name: string; ema
     paymentExpiresAt: createdAt + PAYMENT_TTL_MS,
     downloadExpiresAt: createdAt + DOWNLOAD_TTL_MS
   };
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  return { payload, token: `${body}.${signBody(body)}` };
+  const result = encode(payload);
+  saveOrderAsync(payload);
+  return result;
+}
+
+export function createPanelOrderToken(
+  customer: { name: string; email: string; phone: string },
+  panel: PanelOrderInfo,
+  basePrice: number
+) {
+  const createdAt = Date.now();
+  const uniqueCode = freshUniqueCode();
+  const payload: PanelOrderPayload = {
+    v: 1,
+    id: genId(),
+    kind: "panel",
+    productId: "panel-custom",
+    productSlug: "panel-custom",
+    productTitle: `Panel ${panel.serverName}`,
+    customerName: customer.name.trim().slice(0, 80),
+    customerEmail: customer.email.trim().toLowerCase().slice(0, 120),
+    customerPhone: customer.phone.trim().slice(0, 24),
+    basePrice,
+    uniqueCode,
+    amount: basePrice + uniqueCode,
+    createdAt,
+    paymentExpiresAt: createdAt + PAYMENT_TTL_MS,
+    downloadExpiresAt: createdAt + DOWNLOAD_TTL_MS,
+    panel
+  };
+  const result = encode(payload);
+  saveOrderAsync(payload);
+  return result;
 }
 
 export function verifyOrderToken(token: string): OrderPayload {
@@ -80,6 +167,7 @@ export function verifyOrderToken(token: string): OrderPayload {
   ) {
     throw new Error("Payload order tidak valid.");
   }
+  if (!payload.kind) (payload as SourceOrderPayload).kind = "source";
   return payload;
 }
 
@@ -89,4 +177,8 @@ export function isPaymentExpired(order: OrderPayload) {
 
 export function isDownloadExpired(order: OrderPayload) {
   return Date.now() > order.downloadExpiresAt;
+}
+
+export function isPanelOrder(order: OrderPayload): order is PanelOrderPayload {
+  return order.kind === "panel";
 }

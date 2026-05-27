@@ -1,0 +1,28 @@
+[
+  {
+    "id": "server-1",
+    "name": "Niki Server 1",
+    "location": "Indonesia (Jakarta)",
+    "panelUrl": "panel1.domainkamu.com",
+    "ptlaEnvKey": "SERVER1_PTLA",
+    "ptlcEnvKey": "SERVER1_PTLC",
+    "wrapperUrlEnvKey": "WRAPPER_API_URL",
+    "locationId": 1,
+    "nestId": 5,
+    "eggId": 16,
+    "maxPanels": 50
+  },
+  {
+    "id": "server-2",
+    "name": "Niki Server 2",
+    "location": "Singapore",
+    "panelUrl": "panel2.domainkamu.com",
+    "ptlaEnvKey": "SERVER2_PTLA",
+    "ptlcEnvKey": "SERVER2_PTLC",
+    "wrapperUrlEnvKey": "WRAPPER_API_URL",
+    "locationId": 1,
+    "nestId": 5,
+    "eggId": 16,
+    "maxPanels": 30
+  }
+]

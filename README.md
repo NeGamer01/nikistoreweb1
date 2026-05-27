@@ -24,13 +24,29 @@ DOWNLOAD_STARTER_STORE_URL=https://link-download/source.zip
 
 `FONNTE_TOKEN` adalah token yang dicopy dari menu Device di Fonnte. Token itu menentukan device pengirim. `OWNER_WHATSAPP_NUMBER` adalah nomor tujuan notifikasi owner, boleh berbeda dari nomor device pengirim.
 
+Untuk produk panel Pterodactyl, isi juga env berikut:
+
+```bash
+PTERO_PANEL_URL=panel.domainkamu.com
+PTLA_API_KEY=ptla_xxx
+PTLC_API_KEY=ptlc_xxx
+DEFAULT_LOCATION_ID=1
+DEFAULT_NEST_ID=...
+DEFAULT_EGG_ID=...
+WRAPPER_API_URL=https://wrapper-api-kamu
+```
+
+`WRAPPER_API_URL` adalah endpoint pembungkus Pterodactyl yang menyediakan `GET /api/pterodactyl/create`. Kalau env Pterodactyl belum lengkap, order panel tetap dibuat tetapi server tidak diprovisioning otomatis dan UI menampilkan status `paid_pending_panel` agar owner bisa setup manual.
+
 ## Alur
 
 1. Buyer checkout produk.
 2. Server membuat token order signed.
 3. Server request `qris_dinamis` ke Okepay.
 4. Halaman payment polling `qris_mutasi`.
-5. Jika nominal unik cocok, buyer melihat link download dan menerima WA via Fonnte.
+5. Jika nominal unik cocok:
+   - produk `source` → buyer dapat link download dan WA via Fonnte.
+   - produk `panel` → server Pterodactyl otomatis dibuat lewat wrapper API, lalu kredensial dikirim ke WA.
 6. Owner menerima notifikasi pembelian sukses via WA.
 
 ## Produk
@@ -41,7 +57,7 @@ Tambah produk:
 npm run product:add
 ```
 
-Data katalog ada di `data/products.json`. Link download asli disimpan di env sesuai `downloadEnvKey`.
+Data katalog ada di `data/products.json`. Produk source code memakai `downloadEnvKey` (link download asli disimpan di env). Produk panel Pterodactyl pakai field `type: "panel"` plus `panel: { ram, disk, cpu }` (RAM/disk dalam MB, CPU dalam persen).
 
 ## Deploy Vercel
 

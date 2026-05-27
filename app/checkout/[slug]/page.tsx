@@ -1,9 +1,10 @@
-import { ArrowLeft, ReceiptText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckoutForm } from "@/components/CheckoutForm";
+import { Topbar } from "@/components/Topbar";
 import { formatRupiah } from "@/lib/format";
-import { getProductBySlug, getProductPrice, hasPromo, products } from "@/lib/products";
+import { findProductBySlug, getProductPrice, hasPromo, products } from "@/lib/products";
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -11,25 +12,21 @@ export function generateStaticParams() {
 
 export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await findProductBySlug(slug);
   if (!product) notFound();
   const salePrice = getProductPrice(product);
   const promo = hasPromo(product);
 
   return (
     <main>
-      <header className="topbar">
-        <Link href="/" className="brand">
-          <span className="brand-mark">
-            <ReceiptText size={19} />
-          </span>
-          <span>NikiStore</span>
-        </Link>
+      <Topbar />
+      <div className="topbar topbar-sub">
+        <span />
         <Link className="back-link" href={`/products/${product.slug}`}>
           <ArrowLeft size={17} />
           Detail
         </Link>
-      </header>
+      </div>
 
       <section className="checkout-layout">
         <div className="checkout-summary">

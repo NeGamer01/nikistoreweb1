@@ -1,6 +1,8 @@
 import { compactDateTime, formatRupiah } from "./format";
 import { sendFonnteMessage } from "./fonnte";
-import type { OrderPayload } from "./orders";
+import { describeSelection } from "./panelPricing";
+import { isPanelOrder, type OrderPayload } from "./orders";
+import type { PanelCreationSuccess } from "./pterodactyl";
 import type { Product } from "./products";
 
 const notificationStore = globalThis as typeof globalThis & {
@@ -23,10 +25,10 @@ export async function notifySuccessfulOrder({
   product: Product;
   downloadUrl: string;
 }) {
-  const key = `${order.id}:${order.amount}`;
+  if (isPanelOrder(order)) return;
+  const key = `${order.id}:${order.amount}:source`;
   const sent = notifiedOrders();
   if (sent.has(key)) return;
-
   sent.add(key);
 
   const buyerMessage = [
@@ -62,11 +64,64 @@ export async function notifySuccessfulOrder({
     `Download: ${downloadUrl}`
   ].join("\n");
 
-  const tasks = [sendFonnteMessage(order.customerPhone, buyerMessage)];
-  if (ownerTarget) tasks.push(sendFonnteMessage(ownerTarget, ownerMessage));
+  await dispatch(order.customerPhone, buyerMessage, ownerTarget, ownerMessage);
+}
 
-  const results = await Promise.allSettled(tasks);
-  for (const result of results) {
+export async function notifyPanelOrder({
+  order,
+  panel
+}: {
+  order: OrderPayload;
+  panel: PanelCreationSuccess;
+}) {
+  if (!isPanelOrder(order)) return;
+  const key = `${order.id}:${order.amount}:panel`;
+  const sent = notifiedOrders();
+  if (sent.has(key)) return;
+  sent.add(key);
+
+  const specText = describeSelection(order.panel.selection);
+
+  const buyerLines = [
+    `Halo ${order.customerName}, pembayaran panel kamu berhasil.`,
+    ``,
+    `Detail transaksi:`,
+    `Order ID: ${order.id}`,
+    `Server: ${order.panel.serverName}`,
+    `Spesifikasi: ${specText}`,
+    `Total dibayar: ${formatRupiah(order.amount)}`,
+    ``,
+    `Akses panel:`,
+    `URL: ${panel.panelUrl}`,
+    `Username: ${panel.username}`
+  ];
+  if (panel.password) buyerLines.push(`Password: ${panel.password}`);
+  if (panel.email) buyerLines.push(`Email login: ${panel.email}`);
+  buyerLines.push(``, `Simpan kredensial ini di tempat aman dan ganti password setelah login.`);
+
+  const ownerTarget = process.env.OWNER_WHATSAPP_NUMBER || "";
+  const ownerLines = [
+    `Panel order sukses`,
+    ``,
+    `Order: ${order.id}`,
+    `Server: ${order.panel.serverName}`,
+    `Spesifikasi: ${specText}`,
+    `Total: ${formatRupiah(order.amount)}`,
+    `Nama: ${order.customerName}`,
+    `WA: ${order.customerPhone}`,
+    `Username panel: ${panel.username}`,
+    `Panel URL: ${panel.panelUrl}`
+  ];
+  if (panel.serverId !== undefined) ownerLines.push(`Server ID: ${panel.serverId}`);
+
+  await dispatch(order.customerPhone, buyerLines.join("\n"), ownerTarget, ownerLines.join("\n"));
+}
+
+async function dispatch(buyerTarget: string, buyerMessage: string, ownerTarget: string, ownerMessage: string) {
+  const tasks = [sendFonnteMessage(buyerTarget, buyerMessage)];
+  if (ownerTarget) tasks.push(sendFonnteMessage(ownerTarget, ownerMessage));
+  const settled = await Promise.allSettled(tasks);
+  for (const result of settled) {
     if (result.status === "rejected") {
       console.error("[fonnte] notification failed", result.reason);
     }

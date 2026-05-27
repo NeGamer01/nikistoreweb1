@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyTextButton } from "@/components/CopyTextButton";
 import { PaymentWatcher } from "@/components/PaymentWatcher";
+import { Topbar } from "@/components/Topbar";
 import { compactDateTime, formatRupiah } from "@/lib/format";
 import { createQrisPayment } from "@/lib/okepay";
-import { verifyOrderToken } from "@/lib/orders";
+import { isPanelOrder, verifyOrderToken } from "@/lib/orders";
+import { describeSelection } from "@/lib/panelPricing";
 import { getProductById } from "@/lib/products";
 
 export const runtime = "nodejs";
@@ -18,8 +20,25 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
   } catch {
     notFound();
   }
-  const product = getProductById(order.productId);
-  if (!product) notFound();
+
+  let title: string;
+  let subtitle: string;
+  let backHref: string;
+  let backLabel: string;
+
+  if (isPanelOrder(order)) {
+    title = `Panel ${order.panel.serverName}`;
+    subtitle = describeSelection(order.panel.selection);
+    backHref = "/panel";
+    backLabel = "Order Panel";
+  } else {
+    const product = getProductById(order.productId);
+    if (!product) notFound();
+    title = product.title;
+    subtitle = product.subtitle;
+    backHref = `/checkout/${product.slug}`;
+    backLabel = "Checkout";
+  }
 
   let qris;
   let qrisError = "";
@@ -31,18 +50,15 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
 
   return (
     <main>
-      <header className="topbar">
-        <Link href="/" className="brand">
-          <span className="brand-mark">
-            <QrCode size={19} />
-          </span>
-          <span>NikiStore</span>
-        </Link>
-        <Link className="back-link" href={`/checkout/${product.slug}`}>
+      <Topbar />
+
+      <div className="topbar topbar-sub">
+        <span />
+        <Link className="back-link" href={backHref}>
           <ArrowLeft size={17} />
-          Checkout
+          {backLabel}
         </Link>
-      </header>
+      </div>
 
       <section className="payment-layout">
         <div className="qris-panel">
@@ -63,8 +79,9 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
 
         <aside className="invoice-panel">
           <div>
-            <span className="eyebrow">Produk</span>
-            <h2>{product.title}</h2>
+            <span className="eyebrow">{isPanelOrder(order) ? "Order Panel" : "Produk"}</span>
+            <h2>{title}</h2>
+            <p>{subtitle}</p>
             <p>{order.customerEmail}</p>
             <p>{order.customerPhone}</p>
           </div>

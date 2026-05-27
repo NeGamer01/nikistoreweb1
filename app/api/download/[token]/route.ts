@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkPayment } from "@/lib/okepay";
-import { isDownloadExpired, verifyOrderToken } from "@/lib/orders";
+import { isDownloadExpired, isPanelOrder, verifyOrderToken } from "@/lib/orders";
 import { getDownloadUrl, getProductById } from "@/lib/products";
 
 export const runtime = "nodejs";
@@ -12,6 +12,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     order = verifyOrderToken(decodeURIComponent(token));
   } catch {
     return NextResponse.json({ message: "Token order tidak valid." }, { status: 400 });
+  }
+
+  if (isPanelOrder(order)) {
+    return NextResponse.json({ message: "Panel order tidak punya link download." }, { status: 400 });
   }
 
   if (isDownloadExpired(order)) {
