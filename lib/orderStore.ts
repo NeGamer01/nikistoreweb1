@@ -89,44 +89,54 @@ type Filters = {
 
 export async function getOrders(filters: Filters = {}): Promise<OrderRecord[]> {
   if (!isMongoConfigured()) return [];
-  const db = await getMongoDb();
-  const query: Record<string, unknown> = {};
-  if (filters.status) query.status = filters.status;
-  if (filters.kind) query.kind = filters.kind;
-  if (filters.search) {
-    const s = filters.search;
-    query.$or = [
-      { _id: { $regex: s, $options: "i" } },
-      { customerName: { $regex: s, $options: "i" } },
-      { customerEmail: { $regex: s, $options: "i" } },
-      { productTitle: { $regex: s, $options: "i" } }
-    ];
+  try {
+    const db = await getMongoDb();
+    const query: Record<string, unknown> = {};
+    if (filters.status) query.status = filters.status;
+    if (filters.kind) query.kind = filters.kind;
+    if (filters.search) {
+      const s = filters.search;
+      query.$or = [
+        { _id: { $regex: s, $options: "i" } },
+        { customerName: { $regex: s, $options: "i" } },
+        { customerEmail: { $regex: s, $options: "i" } },
+        { productTitle: { $regex: s, $options: "i" } }
+      ];
+    }
+    return db
+      .collection<OrderRecord>(COLLECTION)
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(filters.skip ?? 0)
+      .limit(filters.limit ?? 100)
+      .toArray();
+  } catch (e) {
+    console.error("MongoDB connection failed:", e);
+    return [];
   }
-  return db
-    .collection<OrderRecord>(COLLECTION)
-    .find(query)
-    .sort({ createdAt: -1 })
-    .skip(filters.skip ?? 0)
-    .limit(filters.limit ?? 100)
-    .toArray();
 }
 
 export async function countOrders(filters: Omit<Filters, "limit" | "skip"> = {}): Promise<number> {
   if (!isMongoConfigured()) return 0;
-  const db = await getMongoDb();
-  const query: Record<string, unknown> = {};
-  if (filters.status) query.status = filters.status;
-  if (filters.kind) query.kind = filters.kind;
-  if (filters.search) {
-    const s = filters.search;
-    query.$or = [
-      { _id: { $regex: s, $options: "i" } },
-      { customerName: { $regex: s, $options: "i" } },
-      { customerEmail: { $regex: s, $options: "i" } },
-      { productTitle: { $regex: s, $options: "i" } }
-    ];
+  try {
+    const db = await getMongoDb();
+    const query: Record<string, unknown> = {};
+    if (filters.status) query.status = filters.status;
+    if (filters.kind) query.kind = filters.kind;
+    if (filters.search) {
+      const s = filters.search;
+      query.$or = [
+        { _id: { $regex: s, $options: "i" } },
+        { customerName: { $regex: s, $options: "i" } },
+        { customerEmail: { $regex: s, $options: "i" } },
+        { productTitle: { $regex: s, $options: "i" } }
+      ];
+    }
+    return db.collection(COLLECTION).countDocuments(query);
+  } catch (e) {
+    console.error("MongoDB connection failed:", e);
+    return 0;
   }
-  return db.collection(COLLECTION).countDocuments(query);
 }
 
 export type OrderStats = {
@@ -151,64 +161,77 @@ export async function getOrderStats(): Promise<OrderStats> {
       topProducts: []
     };
   }
-  const db = await getMongoDb();
-  const col = db.collection<OrderRecord>(COLLECTION);
+  try {
+    const db = await getMongoDb();
+    const col = db.collection<OrderRecord>(COLLECTION);
 
-  const [totalOrders, paidOrders, pendingOrders, expiredOrders] = await Promise.all([
-    col.countDocuments(),
-    col.countDocuments({ status: "paid" }),
-    col.countDocuments({ status: "pending" }),
-    col.countDocuments({ status: "expired" })
-  ]);
+    const [totalOrders, paidOrders, pendingOrders, expiredOrders] = await Promise.all([
+      col.countDocuments(),
+      col.countDocuments({ status: "paid" }),
+      col.countDocuments({ status: "pending" }),
+      col.countDocuments({ status: "expired" })
+    ]);
 
-  const revenueAgg = await col
-    .aggregate([
-      { $match: { status: "paid" } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ])
-    .toArray();
-  const totalRevenue = (revenueAgg[0]?.total as number) ?? 0;
+    const revenueAgg = await col
+      .aggregate([
+        { $match: { status: "paid" } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ])
+      .toArray();
+    const totalRevenue = (revenueAgg[0]?.total as number) ?? 0;
 
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-  const monthRevenueAgg = await col
-    .aggregate([
-      { $match: { status: "paid", paidAt: { $gte: startOfMonth.getTime() } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ])
-    .toArray();
-  const revenueThisMonth = (monthRevenueAgg[0]?.total as number) ?? 0;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const monthRevenueAgg = await col
+      .aggregate([
+        { $match: { status: "paid", paidAt: { $gte: startOfMonth.getTime() } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ])
+      .toArray();
+    const revenueThisMonth = (monthRevenueAgg[0]?.total as number) ?? 0;
 
-  const topProductsAgg = await col
-    .aggregate([
-      { $match: { status: "paid" } },
-      {
-        $group: {
-          _id: "$productTitle",
-          count: { $sum: 1 },
-          revenue: { $sum: "$amount" }
-        }
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 }
-    ])
-    .toArray();
-  const topProducts = topProductsAgg.map((p) => ({
-    productTitle: p._id as string,
-    count: p.count as number,
-    revenue: p.revenue as number
-  }));
+    const topProductsAgg = await col
+      .aggregate([
+        { $match: { status: "paid" } },
+        {
+          $group: {
+            _id: "$productTitle",
+            count: { $sum: 1 },
+            revenue: { $sum: "$amount" }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+      ])
+      .toArray();
+    const topProducts = topProductsAgg.map((p) => ({
+      productTitle: p._id as string,
+      count: p.count as number,
+      revenue: p.revenue as number
+    }));
 
-  return {
-    totalOrders,
-    paidOrders,
-    pendingOrders,
-    expiredOrders,
-    totalRevenue,
-    revenueThisMonth,
-    topProducts
-  };
+    return {
+      totalOrders,
+      paidOrders,
+      pendingOrders,
+      expiredOrders,
+      totalRevenue,
+      revenueThisMonth,
+      topProducts
+    };
+  } catch (e) {
+    console.error("MongoDB connection failed:", e);
+    return {
+      totalOrders: 0,
+      paidOrders: 0,
+      pendingOrders: 0,
+      expiredOrders: 0,
+      totalRevenue: 0,
+      revenueThisMonth: 0,
+      topProducts: []
+    };
+  }
 }
 
 export async function getOrderById(orderId: string): Promise<OrderRecord | null> {
