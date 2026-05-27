@@ -1,18 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import { BarChart3, Package, Power, ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { getSessionCookieName, verifySession } from "@/lib/adminAuth";
 import { LogoutButton } from "@/components/LogoutButton";
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-
-  if (!token || !(await verifySession(token))) {
-    redirect("/admin/login");
-  }
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#0f172a" }}>
       <aside style={{
@@ -66,14 +58,6 @@ function SidebarLink({ href, icon, label }: { href: string; icon: React.ReactNod
         fontSize: "0.95rem",
         fontWeight: 500,
         transition: "all 0.2s"
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-        e.currentTarget.style.color = "#fff";
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.background = "transparent";
-        e.currentTarget.style.color = "rgba(255,255,255,0.7)";
       }}
     >
       {icon}
