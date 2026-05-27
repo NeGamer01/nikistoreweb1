@@ -73,16 +73,43 @@ export async function getAllProducts(): Promise<ProductRecord[]> {
       updatedAt: Date.now()
     }));
   }
-  await ensureSeeded();
-  const db = await getMongoDb();
-  return db.collection<ProductRecord>(COLLECTION).find({ active: true }).sort({ createdAt: -1 }).toArray();
+  try {
+    await ensureSeeded();
+    const db = await getMongoDb();
+    return db.collection<ProductRecord>(COLLECTION).find({ active: true }).sort({ createdAt: -1 }).toArray();
+  } catch (e) {
+    console.error("MongoDB connection failed, falling back to JSON:", e);
+    return (productData as Array<Record<string, unknown>>).map((p) => ({
+      _id: String(p.id),
+      slug: String(p.slug),
+      title: String(p.title),
+      subtitle: String(p.subtitle || ""),
+      description: String(p.description || ""),
+      price: Number(p.price) || 0,
+      promoPrice: p.promoPrice ? Number(p.promoPrice) : undefined,
+      category: String(p.category || ""),
+      image: String(p.image || ""),
+      stack: (p.stack as string[]) || [],
+      includes: (p.includes as string[]) || [],
+      highlights: (p.highlights as string[]) || [],
+      downloadEnvKey: String(p.downloadEnvKey || ""),
+      active: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }));
+  }
 }
 
 export async function getAllProductsAdmin(): Promise<ProductRecord[]> {
   if (!isMongoConfigured()) return getAllProducts();
-  await ensureSeeded();
-  const db = await getMongoDb();
-  return db.collection<ProductRecord>(COLLECTION).find({}).sort({ createdAt: -1 }).toArray();
+  try {
+    await ensureSeeded();
+    const db = await getMongoDb();
+    return db.collection<ProductRecord>(COLLECTION).find({}).sort({ createdAt: -1 }).toArray();
+  } catch (e) {
+    console.error("MongoDB connection failed:", e);
+    return getAllProducts();
+  }
 }
 
 export async function getProductById(id: string): Promise<ProductRecord | null> {
@@ -90,9 +117,15 @@ export async function getProductById(id: string): Promise<ProductRecord | null> 
     const all = await getAllProducts();
     return all.find((p) => p._id === id) || null;
   }
-  await ensureSeeded();
-  const db = await getMongoDb();
-  return db.collection<ProductRecord>(COLLECTION).findOne({ _id: id });
+  try {
+    await ensureSeeded();
+    const db = await getMongoDb();
+    return db.collection<ProductRecord>(COLLECTION).findOne({ _id: id });
+  } catch (e) {
+    console.error("MongoDB connection failed:", e);
+    const all = await getAllProducts();
+    return all.find((p) => p._id === id) || null;
+  }
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductRecord | null> {
@@ -100,9 +133,15 @@ export async function getProductBySlug(slug: string): Promise<ProductRecord | nu
     const all = await getAllProducts();
     return all.find((p) => p.slug === slug) || null;
   }
-  await ensureSeeded();
-  const db = await getMongoDb();
-  return db.collection<ProductRecord>(COLLECTION).findOne({ slug });
+  try {
+    await ensureSeeded();
+    const db = await getMongoDb();
+    return db.collection<ProductRecord>(COLLECTION).findOne({ slug });
+  } catch (e) {
+    console.error("MongoDB connection failed:", e);
+    const all = await getAllProducts();
+    return all.find((p) => p.slug === slug) || null;
+  }
 }
 
 export async function createProduct(product: Omit<ProductRecord, "_id" | "createdAt" | "updatedAt">): Promise<string> {

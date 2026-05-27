@@ -1,36 +1,38 @@
-import { MongoClient, type Db } from "mongodb";
+import { MongoClient } from 'mongodb';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __nikiMongoClient: MongoClient | undefined;
-  // eslint-disable-next-line no-var
-  var __nikiMongoPromise: Promise<MongoClient> | undefined;
+const uri = process.env.MONGODB_URI;
+const mongoOptions = {
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 5000,
+};
+
+let client: MongoClient | undefined;
+let clientPromise: Promise<MongoClient>;
+
+if (!uri) {
+  throw new Error('Please add your Mongo URI to .env.local');
 }
 
-function getUri() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI belum diset.");
-  return uri;
-}
+const globalForMongo = globalThis as unknown as {
+  mongo: Promise<MongoClient> | undefined;
+};
 
-function getDbName() {
-  return process.env.MONGODB_DB || "nikistore";
-}
-
-export function isMongoConfigured() {
-  return Boolean(process.env.MONGODB_URI);
-}
-
-export async function getMongoDb(): Promise<Db> {
-  if (!global.__nikiMongoPromise) {
-    const client = new MongoClient(getUri(), {
-      serverSelectionTimeoutMS: 8000
-    });
-    global.__nikiMongoPromise = client.connect().then((c) => {
-      global.__nikiMongoClient = c;
-      return c;
-    });
+if (process.env.NODE_ENV === 'development') {
+  if (!globalForMongo.mongo) {
+    client = new MongoClient(uri, mongoOptions);
+    globalForMongo.mongo = client.connect();
   }
-  const client = await global.__nikiMongoPromise;
-  return client.db(getDbName());
+  clientPromise = globalForMongo.mongo;
+} else {
+  client = new MongoClient(uri, mongoOptions);
+  clientPromise = client.connect();
+}
+
+export async function getMongoDb() {
+  const mongoClient = await clientPromise;
+  return mongoClient.db('nikistore');
+}
+
+export function isMongoConfigured(): boolean {
+  return !!uri;
 }
