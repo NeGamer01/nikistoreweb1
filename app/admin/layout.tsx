@@ -3,18 +3,32 @@ export const dynamic = "force-dynamic";
 import { BarChart3, Package, Power, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
+import MobileMenu from "@/components/MobileMenu";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#0f172a" }}>
-      <aside style={{
-        width: "250px",
-        background: "#1e293b",
-        borderRight: "1px solid rgba(255,255,255,0.1)",
-        padding: "1.5rem",
-        display: "flex",
-        flexDirection: "column"
-      }}>
+      {/* Mobile menu */}
+      <MobileMenu />
+
+      {/* Sidebar */}
+      <aside
+        style={{
+          width: "250px",
+          background: "#1e293b",
+          borderRight: "1px solid rgba(255,255,255,0.1)",
+          padding: "1.5rem",
+          display: "flex",
+          flexDirection: "column",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          height: "100vh",
+          zIndex: 40,
+          overflowY: "auto"
+        }}
+        className="admin-sidebar"
+      >
         <div style={{ marginBottom: "2rem" }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#fff" }}>
             Admin Panel
@@ -36,9 +50,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <main style={{ flex: 1, padding: "2rem", overflow: "auto" }}>
+      {/* Main content */}
+      <main className="admin-main" style={{ flex: 1, padding: "2rem", overflow: "auto", marginLeft: "250px" }}>
         {children}
       </main>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .admin-sidebar {
+            transform: translateX(-100%) !important;
+            position: fixed !important;
+          }
+          .admin-main {
+            margin-left: 0 !important;
+            padding: 1rem !important;
+            padding-top: 4rem !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .admin-sidebar {
+            transform: translateX(0) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
