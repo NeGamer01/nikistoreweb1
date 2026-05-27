@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Topbar } from "@/components/Topbar";
 import { formatRupiah } from "@/lib/format";
-import { findProductBySlug, getProductPrice, hasPromo, products } from "@/lib/products";
+import { getProductBySlug, getProductPrice, hasPromo, products } from "@/lib/products";
+import { getProductBySlug as dbGetBySlug } from "@/lib/productStore";
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -11,7 +12,27 @@ export function generateStaticParams() {
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await findProductBySlug(slug);
+  let product = getProductBySlug(slug);
+  if (!product) {
+    const record = await dbGetBySlug(slug);
+    if (record) {
+      product = {
+        id: record._id,
+        slug: record.slug,
+        title: record.title,
+        subtitle: record.subtitle,
+        description: record.description,
+        price: record.price,
+        promoPrice: record.promoPrice,
+        category: record.category,
+        image: record.image,
+        stack: record.stack,
+        includes: record.includes,
+        highlights: record.highlights,
+        downloadEnvKey: record.downloadEnvKey
+      };
+    }
+  }
   if (!product) notFound();
   const salePrice = getProductPrice(product);
   const promo = hasPromo(product);
