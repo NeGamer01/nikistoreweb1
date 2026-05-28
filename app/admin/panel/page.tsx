@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { Power, Loader2 } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 import { formatDate } from "@/lib/date";
 
@@ -25,6 +26,8 @@ type PanelOrder = {
 export default function AdminPanelPage() {
   const [orders, setOrders] = useState<PanelOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/panel-orders")
@@ -34,11 +37,62 @@ export default function AdminPanelPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const refreshSettings = useCallback(() => {
+    fetch("/api/panel-settings")
+      .then((r) => r.json())
+      .then((d) => setEnabled(Boolean(d.enabled)))
+      .catch(() => setEnabled(true));
+  }, []);
+
+  useEffect(() => { refreshSettings(); }, [refreshSettings]);
+
+  async function toggle() {
+    if (enabled === null) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/panel-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !enabled })
+      });
+      if (res.ok) setEnabled(!enabled);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div>
-      <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "#fff", marginBottom: "2rem" }}>
-        Panel Orders
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "#fff", margin: 0 }}>
+          Panel Orders
+        </h1>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "999px", background: "rgba(255,255,255,0.03)" }}>
+          <Power size={16} color="#818cf8" />
+          <span style={{ color: "#fff", fontSize: "0.9rem" }}>
+            {enabled === null ? "..." : enabled ? "Aktif" : "Nonaktif"}
+          </span>
+          <button
+            type="button"
+            onClick={toggle}
+            disabled={enabled === null || busy}
+            style={{
+              padding: "0.45rem 1rem",
+              borderRadius: "999px",
+              border: "none",
+              cursor: busy ? "wait" : "pointer",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              background: enabled ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)",
+              color: enabled ? "#f87171" : "#4ade80",
+              transition: "all 0.2s"
+            }}
+          >
+            {busy ? <Loader2 className="spin" size={14} /> : enabled ? "Matikan" : "Aktifkan"}
+          </button>
+        </div>
+      </div>
 
       {loading ? (
         <div style={{ color: "#fff", textAlign: "center", padding: "4rem" }}>Loading...</div>

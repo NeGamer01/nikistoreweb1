@@ -7,7 +7,6 @@ import { useCallback, useEffect, useState } from "react";
 
 export default function PanelOrderPage() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
     fetch("/api/panel-settings")
@@ -18,21 +17,6 @@ export default function PanelOrderPage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  async function toggle() {
-    if (enabled === null) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/panel-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !enabled })
-      });
-      if (res.ok) setEnabled(!enabled);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <main>
       <Topbar />
@@ -41,28 +25,6 @@ export default function PanelOrderPage() {
         <span className="eyebrow">Pterodactyl</span>
         <h1>Order Panel Custom</h1>
         <p>Pilih spesifikasi server sesuai kebutuhan. Setelah QRIS dibayar, server otomatis dibuat dan kredensial dikirim via WhatsApp.</p>
-
-        <div className="panel-toggle" style={{ marginTop: "1.25rem", display: "inline-flex", alignItems: "center", gap: "0.75rem", padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "999px", background: "rgba(255,255,255,0.03)" }}>
-          <Power size={16} />
-          <span>Status: {enabled === null ? "..." : enabled ? "Aktif" : "Nonaktif"}</span>
-          <button
-            type="button"
-            onClick={toggle}
-            disabled={enabled === null || busy}
-            style={{
-              padding: "0.45rem 1rem",
-              borderRadius: "999px",
-              border: "none",
-              cursor: busy ? "wait" : "pointer",
-              fontWeight: 600,
-              fontSize: "0.85rem",
-              background: enabled ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)",
-              color: enabled ? "#f87171" : "#4ade80"
-            }}
-          >
-            {busy ? "..." : enabled ? "Matikan" : "Aktifkan"}
-          </button>
-        </div>
       </section>
 
       {enabled === null ? (
