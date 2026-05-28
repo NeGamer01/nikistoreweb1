@@ -878,3 +878,203 @@ p {
     grid-column: 1 / -1;
   }
 }
+
+.my-servers-layout {
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.my-servers-search {
+  padding: 0;
+}
+
+.my-servers-search-box {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.my-servers-search-box input {
+  flex: 1;
+}
+
+.my-servers-input {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+  outline: none;
+}
+
+.my-servers-input:focus {
+  border-color: var(--teal);
+}
+
+.my-servers-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.my-servers-empty svg {
+  color: var(--line);
+  margin-bottom: 20px;
+}
+
+.my-servers-empty h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.my-servers-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.my-servers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.my-servers-list h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.my-server-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.my-server-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.my-server-card-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.my-server-card-title svg {
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.my-server-card-title h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.my-server-card-title p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.my-server-card-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  background: var(--paper-2);
+  border-radius: 8px;
+}
+
+.my-server-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.my-server-spec-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.my-server-spec-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.my-server-spec-expire {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.my-server-spec-expire svg {
+  color: var(--muted);
+}
+
+.expire-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.expire-badge-ok {
+  background: rgba(54, 242, 197, 0.15);
+  color: var(--teal);
+}
+
+.expire-badge-soon {
+  background: rgba(255, 209, 102, 0.15);
+  color: var(--amber);
+}
+
+.expire-badge-warning {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--red);
+}
+
+.expire-badge-expired {
+  background: rgba(255, 107, 107, 0.25);
+  color: var(--red);
+}
+
+.my-server-card-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.my-server-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .my-servers-search-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .my-server-card-actions {
+    flex-direction: column;
+  }
+
+  .my-server-card-actions .icon-button {
+    width: 100%;
+  }
+}

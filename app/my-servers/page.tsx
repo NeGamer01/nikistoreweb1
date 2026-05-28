@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Server, Calendar, RefreshCw, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { Search, Server, Calendar, RefreshCw, AlertCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { Topbar } from "@/components/Topbar";
 
 type PanelServer = {
   _id: string;
@@ -65,158 +66,131 @@ export default function MyServersPage() {
     return days;
   };
 
-  const getExpireColor = (expiresAt: number) => {
+  const getExpireBadgeClass = (expiresAt: number) => {
     const days = getDaysLeft(expiresAt);
-    if (days <= 0) return "bg-red-500/20 text-red-400 border-red-500/30";
-    if (days <= 3) return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-    if (days <= 7) return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    return "bg-green-500/20 text-green-400 border-green-500/30";
+    if (days <= 0) return "expire-badge expire-badge-expired";
+    if (days <= 3) return "expire-badge expire-badge-warning";
+    if (days <= 7) return "expire-badge expire-badge-soon";
+    return "expire-badge expire-badge-ok";
   };
 
   const formatSpecs = (ram: number, disk: number, cpu: number) => {
-    const ramStr = ram === 0 ? "Unlimited" : `${ram}MB`;
-    const diskStr = disk === 0 ? "Unlimited" : `${disk}MB`;
+    const ramStr = ram === 0 ? "Unlimited" : `${(ram / 1024).toFixed(0)} GB`;
+    const diskStr = disk === 0 ? "Unlimited" : `${(disk / 1024).toFixed(0)} GB`;
     const cpuStr = cpu === 0 ? "Unlimited" : `${cpu}%`;
     return `${ramStr} / ${diskStr} / ${cpuStr}`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Server Saya</h1>
-          <p className="text-slate-400">
-            Cari server panel kamu dengan nomor WhatsApp, email, atau nama server
-          </p>
-        </div>
+    <main>
+      <Topbar />
 
-        <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8 backdrop-blur-sm">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && search()}
-                placeholder="Masukkan nomor WhatsApp, email, atau nama server..."
-                className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-slate-500"
-              />
-            </div>
+      <section className="panel-hero">
+        <span className="eyebrow">Server Management</span>
+        <h1>Server Saya</h1>
+        <p>Cari server panel kamu dengan nomor WhatsApp, email, atau nama server</p>
+      </section>
+
+      <section className="checkout-layout my-servers-layout">
+        <div className="checkout-summary my-servers-search">
+          <div className="my-servers-search-box">
+            <Search size={20} />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && search()}
+              placeholder="Masukkan nomor WhatsApp, email, atau nama server..."
+              className="my-servers-input"
+            />
             <button
               onClick={() => search()}
-              disabled={loading}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2"
+              disabled={loading || !query.trim()}
+              className="icon-button primary"
             >
-              {loading ? (
-                <RefreshCw className="animate-spin" size={20} />
-              ) : (
-                <Search size={20} />
-              )}
+              {loading ? <RefreshCw className="spin" size={18} /> : <Search size={18} />}
               Cari
             </button>
           </div>
         </div>
 
         {searched && servers.length === 0 && !loading && (
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-12 backdrop-blur-sm text-center">
-            <AlertCircle className="mx-auto mb-4 text-slate-500" size={48} />
-            <p className="text-slate-400 text-lg">
-              Tidak ada server yang ditemukan untuk pencarian tersebut
-            </p>
-            <p className="text-slate-500 text-sm mt-2">
-              Pastikan nomor WhatsApp, email, atau nama server sudah benar
-            </p>
+          <div className="my-servers-empty">
+            <AlertCircle size={48} />
+            <h2>Tidak ada server yang ditemukan</h2>
+            <p>Pastikan nomor WhatsApp, email, atau nama server sudah benar</p>
           </div>
         )}
 
         {servers.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold mb-4">
-              Ditemukan {servers.length} server
-            </h2>
+          <div className="my-servers-list">
+            <h2>Ditemukan {servers.length} server</h2>
             {servers.map((server) => {
               const daysLeft = getDaysLeft(server.expiresAt);
               const isExpired = daysLeft <= 0;
 
               return (
-                <div
-                  key={server._id}
-                  className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 backdrop-blur-sm hover:border-slate-700 transition-colors"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3 mb-3">
-                        <Server className="text-blue-400 mt-1" size={24} />
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white mb-1">
-                            {server.serverName}
-                          </h3>
-                          <p className="text-slate-400 text-sm">
-                            {server.eggName} • {server.username}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">Spesifikasi</p>
-                          <p className="text-white font-medium">
-                            {formatSpecs(server.ram, server.disk, server.cpu)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">Diperpanjang</p>
-                          <p className="text-white font-medium">
-                            {server.renewedCount}x
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">Kadaluarsa</p>
-                          <div className="flex items-center gap-2">
-                            <Calendar size={16} className="text-slate-400" />
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getExpireColor(server.expiresAt)}`}>
-                              {formatExpireDate(server.expiresAt)}
-                              {daysLeft > 0 && ` (${daysLeft} hari)`}
-                              {daysLeft <= 0 && " (Expired)"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 text-sm text-slate-400">
-                        <span>📧 {server.email}</span>
-                        <span>•</span>
-                        <span>📱 {server.phone}</span>
+                <div key={server._id} className="my-server-card">
+                  <div className="my-server-card-header">
+                    <div className="my-server-card-title">
+                      <Server size={24} />
+                      <div>
+                        <h3>{server.serverName}</h3>
+                        <p>{server.eggName} • {server.username}</p>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Link
-                        href={server.panelUrl}
-                        target="_blank"
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition-colors text-center"
-                      >
-                        Buka Panel
-                      </Link>
-                      <Link
-                        href={`/renew/${server.orderId}`}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors text-center ${
-                          isExpired
-                            ? "bg-blue-600 hover:bg-blue-700"
-                            : "bg-green-600 hover:bg-green-700"
-                        }`}
-                      >
-                        {isExpired ? "Aktifkan Kembali" : "Perpanjang"}
-                      </Link>
+                  <div className="my-server-card-specs">
+                    <div className="my-server-spec">
+                      <span className="my-server-spec-label">Spesifikasi</span>
+                      <span className="my-server-spec-value">{formatSpecs(server.ram, server.disk, server.cpu)}</span>
                     </div>
+                    <div className="my-server-spec">
+                      <span className="my-server-spec-label">Diperpanjang</span>
+                      <span className="my-server-spec-value">{server.renewedCount}x</span>
+                    </div>
+                    <div className="my-server-spec">
+                      <span className="my-server-spec-label">Kadaluarsa</span>
+                      <div className="my-server-spec-expire">
+                        <Calendar size={16} />
+                        <span className={getExpireBadgeClass(server.expiresAt)}>
+                          {formatExpireDate(server.expiresAt)}
+                          {daysLeft > 0 && ` (${daysLeft} hari)`}
+                          {daysLeft <= 0 && " (Expired)"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="my-server-card-meta">
+                    <span>📧 {server.email}</span>
+                    <span>•</span>
+                    <span>📱 {server.phone}</span>
+                  </div>
+
+                  <div className="my-server-card-actions">
+                    <Link
+                      href={server.panelUrl}
+                      target="_blank"
+                      className="icon-button ghost"
+                    >
+                      <ExternalLink size={18} />
+                      Buka Panel
+                    </Link>
+                    <Link
+                      href={`/renew/${server.orderId}`}
+                      className="icon-button primary"
+                    >
+                      {isExpired ? "Aktifkan Kembali" : "Perpanjang"}
+                    </Link>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
