@@ -19,9 +19,17 @@ export default function MobileMenu() {
   useEffect(() => {
     const sidebar = document.querySelector(".admin-sidebar") as HTMLElement;
     if (sidebar && isMobile) {
+      sidebar.style.transition = "transform 0.3s ease";
       sidebar.style.transform = isOpen ? "translateX(0)" : "translateX(-100%)";
     }
   }, [isOpen, isMobile]);
+
+  useEffect(() => {
+    const sidebar = document.querySelector(".admin-sidebar") as HTMLElement;
+    if (sidebar && isMobile && !isOpen) {
+      sidebar.style.transform = "translateX(-100%)";
+    }
+  }, [isMobile]);
 
   if (!isMobile) return null;
 

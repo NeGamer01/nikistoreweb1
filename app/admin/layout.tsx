@@ -58,8 +58,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <style>{`
         @media (max-width: 768px) {
           .admin-sidebar {
-            transform: translateX(-100%) !important;
             position: fixed !important;
+            transition: transform 0.3s ease;
           }
           .admin-main {
             margin-left: 0 !important;
