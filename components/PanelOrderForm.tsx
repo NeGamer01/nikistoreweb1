@@ -13,6 +13,7 @@ import {
   type DiskValue,
   type RamValue
 } from "@/lib/panelPricing";
+import { eggs, type EggConfig } from "@/lib/eggs";
 
 type ServerInfo = {
   id: string;
@@ -34,8 +35,10 @@ export function PanelOrderForm() {
   const [ram, setRam] = useState<RamValue>(1024);
   const [disk, setDisk] = useState<DiskValue>(1024);
   const [cpu, setCpu] = useState<CpuValue>(60);
+  const [eggId, setEggId] = useState<number>(eggs[0]?.id || 0);
 
-  const price = useMemo(() => calculatePanelPrice({ ram, disk, cpu }), [ram, disk, cpu]);
+  const selectedEgg = eggs.find((e) => e.id === eggId);
+  const price = useMemo(() => calculatePanelPrice({ ram, disk, cpu, eggId, nestId: selectedEgg?.nestId || 0 }), [ram, disk, cpu, eggId, selectedEgg]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +90,8 @@ export function PanelOrderForm() {
         serverId,
         ram,
         disk,
-        cpu
+        cpu,
+        eggId
       })
     });
     const data = await res.json();
@@ -151,6 +155,20 @@ export function PanelOrderForm() {
           pattern="[a-zA-Z0-9 _\-]+"
           placeholder="contoh: bot-saya"
         />
+      </div>
+      <div className="field">
+        <label htmlFor="egg">Runtime / Environment</label>
+        <select
+          id="egg"
+          value={eggId}
+          onChange={(e) => setEggId(Number(e.target.value))}
+        >
+          {eggs.map((egg) => (
+            <option key={egg.id} value={egg.id}>
+              {egg.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="username">Username Panel</label>

@@ -7,6 +7,7 @@ import {
 import { createPanelOrderToken } from "@/lib/orders";
 import { isValidWhatsAppNumber, normalizeWhatsAppNumber } from "@/lib/phone";
 import { getServerById, isServerAvailable } from "@/lib/servers";
+import { getEggById, isValidEgg } from "@/lib/eggs";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
   const username = String(body?.username || "").trim();
   const serverName = String(body?.serverName || "").trim();
   const serverId = String(body?.serverId || "").trim();
+  const eggId = pickInt(body?.eggId);
 
   if (name.length < 2) return NextResponse.json({ message: "Nama wajib diisi." }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -58,10 +60,17 @@ export async function POST(req: Request) {
     );
   }
 
+  if (!isValidEgg(eggId)) {
+    return NextResponse.json({ message: "Runtime/Environment tidak valid." }, { status: 400 });
+  }
+
+  const egg = getEggById(eggId)!;
   const selection: PanelSelection = {
     ram: pickInt(body?.ram) as PanelSelection["ram"],
     disk: pickInt(body?.disk) as PanelSelection["disk"],
-    cpu: pickInt(body?.cpu) as PanelSelection["cpu"]
+    cpu: pickInt(body?.cpu) as PanelSelection["cpu"],
+    eggId: egg.id,
+    nestId: egg.nestId
   };
   if (!isValidSelection(selection)) {
     return NextResponse.json({ message: "Spesifikasi tidak valid." }, { status: 400 });
@@ -75,7 +84,7 @@ export async function POST(req: Request) {
   try {
     const { payload, token } = createPanelOrderToken(
       { name, email, phone },
-      { username, selection, serverName, serverId },
+      { username, selection, serverName, serverId, eggId: egg.id, eggName: egg.name },
       basePrice
     );
     return NextResponse.json({

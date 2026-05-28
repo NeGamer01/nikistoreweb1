@@ -7,6 +7,8 @@ export type PanelOrderInfo = {
   selection: PanelSelection;
   serverName: string;
   serverId: string;
+  eggId: number;
+  eggName: string;
 };
 
 type SourceOrderPayload = {

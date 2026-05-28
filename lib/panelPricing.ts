@@ -6,6 +6,8 @@ export type PanelSelection = {
   ram: RamValue;
   disk: DiskValue;
   cpu: CpuValue;
+  eggId: number;
+  nestId: number;
 };
 
 export const RAM_OPTIONS: { value: RamValue; label: string }[] = [
@@ -66,7 +68,9 @@ export function isValidSelection(value: unknown): value is PanelSelection {
   return (
     RAM_OPTIONS.some((o) => o.value === sel.ram) &&
     DISK_OPTIONS.some((o) => o.value === sel.disk) &&
-    CPU_OPTIONS.some((o) => o.value === sel.cpu)
+    CPU_OPTIONS.some((o) => o.value === sel.cpu) &&
+    typeof sel.eggId === "number" &&
+    typeof sel.nestId === "number"
   );
 }
 
