@@ -7,6 +7,7 @@ import { getPanelResult, releasePanelLock, savePanelResult, tryAcquirePanelLock 
 import { getProductById } from "@/lib/products";
 import { createPterodactylServer, isPterodactylConfigured } from "@/lib/pterodactyl";
 import { getServerById, recordPanelOrder } from "@/lib/servers";
+import { savePanelServer } from "@/lib/panelServerStore";
 
 export const runtime = "nodejs";
 
@@ -83,6 +84,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
             username: result.username,
             panelUrl: result.panelUrl,
             raw: result.raw
+          });
+
+          const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+          await savePanelServer({
+            orderId: order.id,
+            serverId: serverConfig.id,
+            serverName: order.panel.serverName,
+            username: result.username,
+            phone: order.customerPhone,
+            email: order.customerEmail,
+            pterodactylServerId: result.serverId,
+            panelUrl: result.panelUrl,
+            ram: order.panel.selection.ram,
+            disk: order.panel.selection.disk,
+            cpu: order.panel.selection.cpu,
+            eggId: order.panel.selection.eggId,
+            eggName: order.panel.eggName,
+            createdAt: Date.now(),
+            expiresAt,
+            renewedCount: 0
           });
         } finally {
           releasePanelLock(order.id);

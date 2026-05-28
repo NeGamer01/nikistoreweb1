@@ -62,6 +62,14 @@ export function calculatePanelPrice(selection: PanelSelection): number {
   return Math.round(total);
 }
 
+export function calculateRenewPrice(ram: number, disk: number, cpu: number): number {
+  let total = 0;
+  total += ram === 0 ? PRICING.ramUnlimited : (ram / 1024) * PRICING.ramPerGb;
+  total += disk === 0 ? PRICING.diskUnlimited : (disk / 1024) * PRICING.diskPerGb;
+  total += PRICING.cpu[cpu as CpuValue] ?? 0;
+  return Math.round(total);
+}
+
 export function isValidSelection(value: unknown): value is PanelSelection {
   if (!value || typeof value !== "object") return false;
   const sel = value as PanelSelection;

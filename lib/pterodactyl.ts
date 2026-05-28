@@ -123,3 +123,50 @@ export async function createPterodactylServer(
     raw: data
   };
 }
+
+export async function deletePterodactylServer(
+  server: ServerConfig,
+  pterodactylServerId: string | number
+): Promise<{ success: boolean; error?: string }> {
+  const creds = getServerCredentials(server);
+  if (!isPterodactylConfigured(server)) {
+    return { success: false, error: `Konfigurasi server ${server.name} belum lengkap.` };
+  }
+
+  const params = new URLSearchParams({
+    domain: server.panelUrl,
+    ptla: creds.ptla,
+    ptlc: creds.ptlc,
+    serverid: String(pterodactylServerId)
+  });
+
+  const url = `${creds.wrapperUrl.replace(/\/$/, "")}/api/pterodactyl/delete?${params.toString()}`;
+
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return { success: false, error: "Response wrapper Pterodactyl bukan JSON valid." };
+    }
+
+    const failed =
+      !res.ok ||
+      data?.error === true ||
+      (Object.prototype.hasOwnProperty.call(data || {}, "status") && data?.status === false);
+
+    if (failed) {
+      return {
+        success: false,
+        error: typeof data?.message === "string" ? data.message : "Wrapper Pterodactyl gagal menghapus server."
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Network error.";
+    return { success: false, error: `Gagal hubungi wrapper Pterodactyl: ${message}` };
+  }
+}
