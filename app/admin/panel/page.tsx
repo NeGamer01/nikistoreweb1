@@ -46,16 +46,26 @@ export default function AdminPanelPage() {
 
   useEffect(() => { refreshSettings(); }, [refreshSettings]);
 
+  const [error, setError] = useState("");
+
   async function toggle() {
     if (enabled === null) return;
     setBusy(true);
+    setError("");
     try {
       const res = await fetch("/api/admin/panel-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled })
       });
-      if (res.ok) setEnabled(!enabled);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message || `Error ${res.status}`);
+        return;
+      }
+      setEnabled(!enabled);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal update");
     } finally {
       setBusy(false);
     }
@@ -93,6 +103,20 @@ export default function AdminPanelPage() {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div style={{
+          background: "rgba(239,68,68,0.1)",
+          border: "1px solid rgba(239,68,68,0.3)",
+          borderRadius: "0.5rem",
+          padding: "0.75rem 1rem",
+          marginBottom: "1.5rem",
+          color: "#f87171",
+          fontSize: "0.9rem"
+        }}>
+          {error}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ color: "#fff", textAlign: "center", padding: "4rem" }}>Loading...</div>

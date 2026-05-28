@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { setPanelOrdersEnabled } from "@/lib/panelSettings";
+import { isAdminAuthenticated } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
 
 export async function PUT(req: Request) {
+  const authenticated = await isAdminAuthenticated();
+  if (!authenticated) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json().catch(() => null);
   if (typeof body?.enabled !== "boolean") {
     return NextResponse.json({ message: "Field 'enabled' (boolean) wajib." }, { status: 400 });
